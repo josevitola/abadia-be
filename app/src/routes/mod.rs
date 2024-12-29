@@ -1,4 +1,4 @@
-use crate::model::ServiceSchema;
+use crate::gql::ServiceSchema;
 use async_graphql::http::{playground_source, GraphQLPlaygroundConfig};
 use async_graphql_axum::{GraphQLRequest, GraphQLResponse};
 use axum::{

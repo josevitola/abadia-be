@@ -1,4 +1,4 @@
-use crate::model::QueryRoot;
+use crate::gql::QueryRoot;
 use crate::observability::metrics::{create_prometheus_recorder, track_metrics};
 use crate::routes::{graphql_handler, graphql_playground, health};
 use async_graphql::{EmptyMutation, EmptySubscription, Schema};
@@ -8,10 +8,11 @@ use std::future::ready;
 use std::env;
 
 // mod db;
-mod model;
+mod gql;
 mod observability;
 mod routes;
 
+// Built following https://oliverjumpertz.com/blog/how-to-build-a-powerful-graphql-api-with-rust/
 
 #[tokio::main]
 async fn main() {
