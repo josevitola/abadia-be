@@ -8,6 +8,6 @@ pub(crate) struct QueryRoot;
 #[Object] // (2)
 impl QueryRoot { // (3)
     async fn hello(&self, _ctx: &Context<'_>) -> &'static str { // (4)
-        "Hello world"
+        "Hello test!"
     }
 }
