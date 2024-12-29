@@ -1,2 +1,4 @@
 */.env
+app//target
+app/.cargo/*
 db/postgres_data/*
