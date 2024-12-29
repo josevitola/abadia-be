@@ -18,7 +18,7 @@ mod routes;
 async fn main() {
     dotenv().ok();
 
-    let schema = Schema::build(QueryRoot, EmptyMutation, EmptySubscription).finish();
+    let schema = Schema::build(QueryRoot::default(), EmptyMutation, EmptySubscription).finish();
 
     let prometheus_recorder = create_prometheus_recorder();
     
