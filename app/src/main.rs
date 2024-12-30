@@ -4,8 +4,8 @@ use crate::routes::{graphql_handler, graphql_playground, health};
 use async_graphql::{EmptyMutation, EmptySubscription, Schema};
 use axum::{extract::Extension, middleware, routing::get, Router, Server};
 use dotenv::dotenv;
-use std::future::ready;
 use std::env;
+use std::future::ready;
 
 mod db;
 mod gql;
@@ -25,7 +25,7 @@ async fn main() -> Result<(), sqlx::Error> {
         .finish();
 
     let prometheus_recorder = create_prometheus_recorder();
-    
+
     let app = Router::new()
         .route("/", get(graphql_playground).post(graphql_handler))
         .route("/health", get(health))

@@ -1,10 +1,16 @@
-use async_graphql::{Context, Object, SimpleObject};
-use sqlx::{postgres::PgRow, Pool, Postgres, Row};
+use super::super::db::languages::Language;
+use async_graphql::{Context, Object};
+use sqlx::{Pool, Postgres};
 
-#[derive(SimpleObject)]
-pub(super) struct Language {
-    pub iso693_3: String,
-    pub name: String
+#[Object]
+impl Language {
+    async fn iso693_3(&self) -> &str {
+        &self.iso693_3
+    }
+
+    async fn name(&self) -> &str {
+        &self.name
+    }
 }
 
 #[derive(Default)]
@@ -15,27 +21,16 @@ impl LanguageQuery {
     async fn languages(&self, ctx: &Context<'_>) -> Result<Vec<Language>, async_graphql::Error> {
         let pool = ctx.data::<Pool<Postgres>>()?;
 
-        let query: Vec<Language> = sqlx::query("SELECT * FROM languages ORDER BY iso693_3")
-            .map(|row: PgRow| Language {
-                iso693_3: row.get("iso693_3"),
-                name: row.get("name"),
-            })
-            .fetch_all(pool).await?;
-
-        Ok(query)
+        Ok(Language::list(pool).await?)
     }
 
-    async fn languages_by_name(&self, ctx: &Context<'_>, keyword: String) -> Result<Vec<Language>, async_graphql::Error> {
+    async fn languages_by_name(
+        &self,
+        ctx: &Context<'_>,
+        keyword: String,
+    ) -> Result<Vec<Language>, async_graphql::Error> {
         let pool = ctx.data::<Pool<Postgres>>()?;
 
-        let query: Vec<Language> = sqlx::query("SELECT * FROM languages WHERE name ILIKE $1 ORDER BY iso693_3")
-            .bind(format!("%{keyword}%"))
-            .map(|row: PgRow| Language {
-                iso693_3: row.get("iso693_3"),
-                name: row.get("name"),
-            })
-            .fetch_all(pool).await?;
-
-        Ok(query)
+        Ok(Language::list_by_name(pool, keyword).await?)
     }
 }

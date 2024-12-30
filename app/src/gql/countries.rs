@@ -1,6 +1,6 @@
+use super::super::db::countries::Country;
 use async_graphql::{Context, Object};
 use sqlx::{Pool, Postgres};
-use super::super::db::countries::Country;
 
 #[Object]
 impl Country {

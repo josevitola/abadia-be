@@ -1,7 +1,8 @@
-use std::env;
 use sqlx::{postgres::PgPoolOptions, Pool, Postgres};
+use std::env;
 
 pub(crate) mod countries;
+pub(crate) mod languages;
 
 pub(crate) async fn create_pool() -> Result<Pool<Postgres>, sqlx::Error> {
     let pool = PgPoolOptions::new()

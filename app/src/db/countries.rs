@@ -1,9 +1,8 @@
 use sqlx::{postgres::PgRow, Pool, Postgres, Row};
 
-#[derive(Debug, Clone)]
 pub(crate) struct Country {
     pub iso3166: String,
-    pub name: String
+    pub name: String,
 }
 
 impl Country {
@@ -13,7 +12,8 @@ impl Country {
                 iso3166: row.get("iso3166"),
                 name: row.get("name"),
             })
-            .fetch_all(pool).await?;
+            .fetch_all(pool)
+            .await?;
 
         Ok(query)
     }
