@@ -1,10 +1,16 @@
-use async_graphql::{Context, Object, SimpleObject};
-use sqlx::{postgres::PgRow, Pool, Postgres, Row};
+use async_graphql::{Context, Object};
+use sqlx::{Pool, Postgres};
+use super::super::db::countries::Country;
 
-#[derive(SimpleObject)]
-pub(crate) struct Country {
-    pub iso3166: String,
-    pub name: String
+#[Object]
+impl Country {
+    async fn iso3166(&self) -> &str {
+        &self.iso3166
+    }
+
+    async fn name(&self) -> &str {
+        &self.name
+    }
 }
 
 #[derive(Default)]
@@ -15,13 +21,6 @@ impl CountryQuery {
     async fn countries(&self, ctx: &Context<'_>) -> Result<Vec<Country>, async_graphql::Error> {
         let pool = ctx.data::<Pool<Postgres>>()?;
 
-        let query: Vec<Country> = sqlx::query("SELECT * FROM countries ORDER BY iso3166")
-            .map(|row: PgRow| Country {
-                iso3166: row.get("iso3166"),
-                name: row.get("name"),
-            })
-            .fetch_all(pool).await?;
-
-        Ok(query)
+        Ok(Country::list(pool).await?)
     }
 }

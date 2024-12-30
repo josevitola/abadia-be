@@ -1,6 +1,6 @@
 use async_graphql::{ComplexObject, Object, SimpleObject};
 
-use super::countries::Country;
+use super::super::db::countries::Country;
 
 #[derive(SimpleObject, Default)]
 #[graphql(complex)]

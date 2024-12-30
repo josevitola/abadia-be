@@ -1,8 +1,9 @@
-use async_graphql::{Object, SimpleObject};
+use async_graphql::{Context, Object, SimpleObject};
+use sqlx::{postgres::PgRow, Pool, Postgres, Row};
 
 #[derive(SimpleObject)]
 pub(super) struct Language {
-    pub iso693_3: &'static str,
+    pub iso693_3: String,
     pub name: String
 }
 
@@ -11,23 +12,30 @@ pub(super) struct LanguageQuery;
 
 #[Object]
 impl LanguageQuery {
-    async fn languages(&self) -> Vec<Language> {
-        vec![
-            Language { iso693_3: "spa", name: "Español".into() },
-            Language { iso693_3: "ang", name: "Old English (ca.450–1100)".into() },
-            Language { iso693_3: "enm", name: "Middle English (1100–1500)".into() },
-            Language { iso693_3: "eng", name: "English".into() },
-        ]
+    async fn languages(&self, ctx: &Context<'_>) -> Result<Vec<Language>, async_graphql::Error> {
+        let pool = ctx.data::<Pool<Postgres>>()?;
+
+        let query: Vec<Language> = sqlx::query("SELECT * FROM languages ORDER BY iso693_3")
+            .map(|row: PgRow| Language {
+                iso693_3: row.get("iso693_3"),
+                name: row.get("name"),
+            })
+            .fetch_all(pool).await?;
+
+        Ok(query)
     }
 
-    async fn languages_by_name(&self, keyword: String) -> Vec<Language> {
-        let list = vec![
-            Language { iso693_3: "spa", name: "Español".into() },
-            Language { iso693_3: "ang", name: "Old English (ca.450–1100)".into() },
-            Language { iso693_3: "enm", name: "Middle English (1100–1500)".into() },
-            Language { iso693_3: "eng", name: "English".into() },
-        ];
+    async fn languages_by_name(&self, ctx: &Context<'_>, keyword: String) -> Result<Vec<Language>, async_graphql::Error> {
+        let pool = ctx.data::<Pool<Postgres>>()?;
 
-        list.into_iter().filter(|language| language.name.to_lowercase().contains(&keyword.to_lowercase())).collect()
+        let query: Vec<Language> = sqlx::query("SELECT * FROM languages WHERE name ILIKE $1 ORDER BY iso693_3")
+            .bind(format!("%{keyword}%"))
+            .map(|row: PgRow| Language {
+                iso693_3: row.get("iso693_3"),
+                name: row.get("name"),
+            })
+            .fetch_all(pool).await?;
+
+        Ok(query)
     }
 }
