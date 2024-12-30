@@ -20,14 +20,9 @@ async fn main() -> Result<(), sqlx::Error> {
 
     let pool = db::create_pool().await?;
 
-    let row: (i64,) = sqlx::query_as("SELECT $1")
-        .bind(150_i64)
-        .fetch_one(&pool)
-        .await?;
-
-    println!("Got: {:?}", row.0);
-
-    let schema = Schema::build(QueryRoot::default(), EmptyMutation, EmptySubscription).finish();
+    let schema = Schema::build(QueryRoot::default(), EmptyMutation, EmptySubscription)
+        .data(pool)
+        .finish();
 
     let prometheus_recorder = create_prometheus_recorder();
     

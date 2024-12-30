@@ -18,10 +18,10 @@ pub(super) struct Author {
 impl Author {
     async fn country(&self) -> Country {
         let country_list = vec![
-            Country { iso3166: "AT", name: "Austria".into() },
-            Country { iso3166: "CA", name: "Canadá".into() },
-            Country { iso3166: "CO", name: "Colombia".into() },
-            Country { iso3166: "DE", name: "Alemania".into() },
+            Country { iso3166: "AT".into(), name: "Austria".into() },
+            Country { iso3166: "CA".into(), name: "Canadá".into() },
+            Country { iso3166: "CO".into(), name: "Colombia".into() },
+            Country { iso3166: "DE".into(), name: "Alemania".into() },
         ];
 
         country_list
