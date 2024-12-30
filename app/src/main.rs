@@ -7,7 +7,7 @@ use dotenv::dotenv;
 use std::future::ready;
 use std::env;
 
-// mod db;
+mod db;
 mod gql;
 mod observability;
 mod routes;
@@ -15,8 +15,17 @@ mod routes;
 // Built following https://oliverjumpertz.com/blog/how-to-build-a-powerful-graphql-api-with-rust/
 
 #[tokio::main]
-async fn main() {
+async fn main() -> Result<(), sqlx::Error> {
     dotenv().ok();
+
+    let pool = db::create_pool().await?;
+
+    let row: (i64,) = sqlx::query_as("SELECT $1")
+        .bind(150_i64)
+        .fetch_one(&pool)
+        .await?;
+
+    println!("Got: {:?}", row.0);
 
     let schema = Schema::build(QueryRoot::default(), EmptyMutation, EmptySubscription).finish();
 
@@ -33,4 +42,6 @@ async fn main() {
         .serve(app.into_make_service())
         .await
         .unwrap();
+
+    Ok(())
 }
