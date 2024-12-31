@@ -1,61 +1,51 @@
-use super::super::db::{authors::Author, countries::Country};
-use async_graphql::{Context, Object};
-use sqlx::{Pool, Postgres};
+use std::{collections::HashMap, hash::Hash};
 
-#[Object]
-impl Author {
-    async fn id(&self) -> &str {
-        &self.id
+use async_graphql::dataloader::*;
+use async_graphql::futures_util::TryStreamExt;
+use async_graphql::*;
+use axum::async_trait;
+use sqlx::{postgres::PgRow, Pool, Postgres, Row};
+
+#[derive(sqlx::FromRow, Hash, Clone, SimpleObject)]
+pub struct AuthorQL {
+    pub id: String,
+    pub last_name: String,
+    #[sqlx(default)]
+    pub first_name: Option<String>,
+    #[sqlx(default)]
+    pub country1: Option<String>,
+    #[sqlx(default)]
+    pub country2: Option<String>,
+    #[sqlx(default)]
+    pub birthyear: Option<i32>,
+    #[sqlx(default)]
+    pub pseudonym: Option<String>,
+}
+
+pub struct AuthorLoader(Pool<Postgres>);
+
+impl AuthorLoader {
+    fn new(postgres_pool: Pool<Postgres>) -> Self {
+        Self(postgres_pool)
     }
+}
 
-    async fn last_name(&self) -> &str {
-        &self.last_name
-    }
+#[async_trait]
+impl Loader<String> for AuthorLoader {
+    type Value = AuthorQL;
+    type Error = FieldError;
 
-    async fn first_name(&self) -> &Option<String> {
-        &self.first_name
-    }
+    async fn load(&self, keys: &[String]) -> Result<HashMap<String, Self::Value>, Self::Error> {
+        println!("load book by batch {:?}", keys);
 
-    async fn country1(&self) -> &Option<String> {
-        &self.country1
-    }
+        let a = sqlx::query_as("SELECT id, name, author FROM books WHERE id = ANY($1)")
+            .bind(keys)
+            .fetch(&self.0)
+            .map_ok(|author: AuthorQL| (author.id.clone(), author))
+            .try_collect()
+            .await?;
 
-    async fn country2(&self) -> &Option<String> {
-        &self.country2
-    }
-
-    async fn birthyear(&self) -> &Option<String> {
-        &self.birthyear
-    }
-
-    async fn pseudonym(&self) -> &Option<String> {
-        &self.pseudonym
-    }
-
-    async fn country(&self) -> Country {
-        let country_list = vec![
-            Country {
-                iso3166: "AT".into(),
-                name: "Austria".into(),
-            },
-            Country {
-                iso3166: "CA".into(),
-                name: "Canadá".into(),
-            },
-            Country {
-                iso3166: "CO".into(),
-                name: "Colombia".into(),
-            },
-            Country {
-                iso3166: "DE".into(),
-                name: "Alemania".into(),
-            },
-        ];
-
-        country_list
-            .into_iter()
-            .find(|country| country.iso3166 == self.country1.as_ref().unwrap().as_str())
-            .unwrap()
+        Ok(a)
     }
 }
 
@@ -64,9 +54,22 @@ pub(crate) struct AuthorQuery;
 
 #[Object]
 impl AuthorQuery {
-    async fn authors(&self, ctx: &Context<'_>) -> Result<Vec<Author>, async_graphql::Error> {
+    async fn authors(&self, ctx: &Context<'_>) -> Result<Vec<AuthorQL>, async_graphql::Error> {
         let pool = ctx.data::<Pool<Postgres>>()?;
 
-        Ok(Author::list(pool).await?)
+        let query: Vec<AuthorQL> = sqlx::query("SELECT * FROM authors ORDER BY last_name")
+            .map(|row: PgRow| AuthorQL {
+                id: row.get("id"),
+                last_name: row.get("last_name"),
+                first_name: row.get("first_name"),
+                country1: row.get("country1"),
+                country2: row.get("country2"),
+                birthyear: row.get("birthyear"),
+                pseudonym: row.get("pseudonym"),
+            })
+            .fetch_all(pool)
+            .await?;
+
+        Ok(query)
     }
 }

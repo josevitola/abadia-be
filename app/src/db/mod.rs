@@ -1,7 +1,6 @@
 use sqlx::{postgres::PgPoolOptions, Pool, Postgres};
 use std::env;
 
-pub(crate) mod authors;
 pub(crate) mod countries;
 pub(crate) mod languages;
 

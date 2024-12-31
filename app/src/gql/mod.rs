@@ -2,10 +2,12 @@ use async_graphql::{EmptyMutation, EmptySubscription};
 use async_graphql::{MergedObject, Schema};
 
 mod authors;
+mod books;
 mod countries;
 mod languages;
 
 use authors::AuthorQuery;
+use books::BookQuery;
 use countries::CountryQuery;
 use languages::LanguageQuery;
 

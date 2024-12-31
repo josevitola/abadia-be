@@ -1,4 +1,4 @@
-use super::super::db::countries::Country;
+use crate::db::countries::Country;
 use async_graphql::{Context, Object};
 use sqlx::{Pool, Postgres};
 

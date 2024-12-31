@@ -4,7 +4,7 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-async-graphql = "6.0.6"
+async-graphql = { version = "6.0.6", features = ["dataloader"] }
 async-graphql-axum = "6.0.6"
 axum = "0.6.20"
 dotenv = "0.15.0"
