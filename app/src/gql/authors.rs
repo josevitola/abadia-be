@@ -1,21 +1,37 @@
-use async_graphql::{ComplexObject, Object, SimpleObject};
+use super::super::db::{authors::Author, countries::Country};
+use async_graphql::{Context, Object};
+use sqlx::{Pool, Postgres};
 
-use super::super::db::countries::Country;
-
-#[derive(SimpleObject, Default)]
-#[graphql(complex)]
-pub(super) struct Author {
-    pub id: &'static str,
-    pub last_name: String,
-    pub first_name: String,
-    pub country1: String,
-    pub country2: Option<String>,
-    pub birthyear: Option<String>,
-    pub pseudonym: Option<String>,
-}
-
-#[ComplexObject]
+#[Object]
 impl Author {
+    async fn id(&self) -> &str {
+        &self.id
+    }
+
+    async fn last_name(&self) -> &str {
+        &self.last_name
+    }
+
+    async fn first_name(&self) -> &Option<String> {
+        &self.first_name
+    }
+
+    async fn country1(&self) -> &Option<String> {
+        &self.country1
+    }
+
+    async fn country2(&self) -> &Option<String> {
+        &self.country2
+    }
+
+    async fn birthyear(&self) -> &Option<String> {
+        &self.birthyear
+    }
+
+    async fn pseudonym(&self) -> &Option<String> {
+        &self.pseudonym
+    }
+
     async fn country(&self) -> Country {
         let country_list = vec![
             Country {
@@ -38,24 +54,19 @@ impl Author {
 
         country_list
             .into_iter()
-            .find(|country| country.iso3166 == self.country1)
+            .find(|country| country.iso3166 == self.country1.as_ref().unwrap().as_str())
             .unwrap()
     }
 }
 
 #[derive(Default)]
-pub(super) struct AuthorQuery;
+pub(crate) struct AuthorQuery;
 
 #[Object]
 impl AuthorQuery {
-    async fn authors(&self) -> Vec<Author> {
-        vec![Author {
-            id: "bb05284e-d760-430b-832d-5b88b3f05185",
-            last_name: "Zweig".to_string(),
-            first_name: "Stefan".to_string(),
-            country1: "AT".to_string(),
-            country2: Some("GB-ENG".to_string()),
-            ..Default::default()
-        }]
+    async fn authors(&self, ctx: &Context<'_>) -> Result<Vec<Author>, async_graphql::Error> {
+        let pool = ctx.data::<Pool<Postgres>>()?;
+
+        Ok(Author::list(pool).await?)
     }
 }
