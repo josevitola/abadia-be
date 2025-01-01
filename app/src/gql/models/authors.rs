@@ -6,7 +6,7 @@ use async_graphql::*;
 use axum::async_trait;
 use sqlx::{postgres::PgRow, PgPool, Row};
 
-use super::AppContext;
+use super::super::AppContext;
 
 #[derive(sqlx::FromRow, Hash, Clone, SimpleObject)]
 pub struct Author {
@@ -52,7 +52,7 @@ impl Loader<String> for AuthorLoader {
 }
 
 #[derive(Default)]
-pub(super) struct AuthorQuery;
+pub struct AuthorQuery;
 
 #[Object]
 impl AuthorQuery {

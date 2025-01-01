@@ -1,14 +1,12 @@
 use async_graphql::{EmptyMutation, EmptySubscription};
 use async_graphql::{MergedObject, Schema};
 
-pub mod authors;
 mod context;
-mod countries;
-mod languages;
+pub mod models;
 
-use authors::AuthorQuery;
-use countries::CountryQuery;
-use languages::LanguageQuery;
+use models::authors::AuthorQuery;
+use models::countries::CountryQuery;
+use models::languages::LanguageQuery;
 
 pub(crate) use context::{AppContext, AppDataLoaders};
 

@@ -1,4 +1,4 @@
-use super::super::db::languages::Language;
+use super::super::super::db::languages::Language;
 use async_graphql::{Context, Object};
 use sqlx::{Pool, Postgres};
 
@@ -14,7 +14,7 @@ impl Language {
 }
 
 #[derive(Default)]
-pub(super) struct LanguageQuery;
+pub struct LanguageQuery;
 
 #[Object]
 impl LanguageQuery {

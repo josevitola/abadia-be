@@ -5,7 +5,8 @@ use async_graphql::dataloader::DataLoader;
 use async_graphql::{EmptyMutation, EmptySubscription, Schema};
 use axum::{extract::Extension, middleware, routing::get, Router, Server};
 use dotenv::dotenv;
-use gql::{authors::AuthorLoader, AppContext, AppDataLoaders};
+use gql::{models::authors::AuthorLoader, AppContext, AppDataLoaders};
+use sqlx::postgres::PgPoolOptions;
 use std::env;
 use std::future::ready;
 
@@ -20,7 +21,10 @@ mod routes;
 async fn main() -> Result<(), sqlx::Error> {
     dotenv().ok();
 
-    let pool = db::create_pool().await?;
+    let pool = PgPoolOptions::new()
+        .max_connections(5)
+        .connect(&env::var("DATABASE_URL").unwrap().as_str())
+        .await?;
 
     let schema = Schema::build(QueryRoot::default(), EmptyMutation, EmptySubscription)
         .data(AppContext {
