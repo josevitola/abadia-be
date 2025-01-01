@@ -1,11 +1,42 @@
-use crate::gql::AppContext;
-use async_graphql::{Context, Object, SimpleObject};
-use sqlx::{postgres::PgRow, Row};
+use std::collections::HashMap;
 
-#[derive(SimpleObject)]
-struct Country {
+use crate::gql::AppContext;
+use async_graphql::futures_util::TryStreamExt;
+use async_graphql::{dataloader::Loader, Context, FieldError, Object, SimpleObject};
+use axum::async_trait;
+use sqlx::{postgres::PgRow, PgPool, Row};
+
+#[derive(sqlx::FromRow, Hash, Clone, SimpleObject)]
+pub struct Country {
     pub iso3166: String,
     pub name: String,
+}
+
+pub(crate) struct CountryLoader(PgPool);
+
+impl CountryLoader {
+    pub fn new(postgres_pool: PgPool) -> Self {
+        Self(postgres_pool)
+    }
+}
+
+#[async_trait]
+impl Loader<String> for CountryLoader {
+    type Value = Country;
+    type Error = FieldError;
+
+    async fn load(&self, keys: &[String]) -> Result<HashMap<String, Self::Value>, Self::Error> {
+        println!("load countries by batch {:?}", keys);
+
+        let hash = sqlx::query_as("SELECT * FROM countries WHERE iso3166     = ANY($1)")
+            .bind(keys)
+            .fetch(&self.0)
+            .map_ok(|country: Country| (country.iso3166.clone(), country))
+            .try_collect()
+            .await?;
+
+        Ok(hash)
+    }
 }
 
 #[derive(Default)]
@@ -25,5 +56,14 @@ impl CountryQuery {
             .await?;
 
         Ok(query)
+    }
+
+    async fn country(
+        &self,
+        ctx: &Context<'_>,
+        iso3166: String,
+    ) -> Result<Option<Country>, async_graphql::Error> {
+        let context = &ctx.data_unchecked::<AppContext>().loaders.countries;
+        context.load_one(iso3166).await
     }
 }
