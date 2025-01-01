@@ -10,7 +10,6 @@ use sqlx::postgres::PgPoolOptions;
 use std::env;
 use std::future::ready;
 
-mod db;
 mod gql;
 mod observability;
 mod routes;
