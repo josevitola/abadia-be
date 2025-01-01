@@ -28,7 +28,7 @@ impl Loader<String> for CountryLoader {
     async fn load(&self, keys: &[String]) -> Result<HashMap<String, Self::Value>, Self::Error> {
         println!("load countries by batch {:?}", keys);
 
-        let hash = sqlx::query_as("SELECT * FROM countries WHERE iso3166     = ANY($1)")
+        let hash = sqlx::query_as("SELECT * FROM countries WHERE iso3166 = ANY($1)")
             .bind(keys)
             .fetch(&self.0)
             .map_ok(|country: Country| (country.iso3166.clone(), country))
