@@ -1,9 +1,11 @@
 use crate::gql::QueryRoot;
 use crate::observability::metrics::{create_prometheus_recorder, track_metrics};
 use crate::routes::{graphql_handler, graphql_playground, health};
+use async_graphql::dataloader::DataLoader;
 use async_graphql::{EmptyMutation, EmptySubscription, Schema};
 use axum::{extract::Extension, middleware, routing::get, Router, Server};
 use dotenv::dotenv;
+use gql::{authors::AuthorLoader, AppContext, AppDataLoaders};
 use std::env;
 use std::future::ready;
 
@@ -21,7 +23,12 @@ async fn main() -> Result<(), sqlx::Error> {
     let pool = db::create_pool().await?;
 
     let schema = Schema::build(QueryRoot::default(), EmptyMutation, EmptySubscription)
-        .data(pool)
+        .data(AppContext {
+            pool: pool.clone(),
+            loaders: AppDataLoaders {
+                authors: DataLoader::new(AuthorLoader::new(pool.clone()), tokio::spawn),
+            },
+        })
         .finish();
 
     let prometheus_recorder = create_prometheus_recorder();

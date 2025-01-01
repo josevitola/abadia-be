@@ -4,10 +4,12 @@ use async_graphql::dataloader::*;
 use async_graphql::futures_util::TryStreamExt;
 use async_graphql::*;
 use axum::async_trait;
-use sqlx::{postgres::PgRow, Pool, Postgres, Row};
+use sqlx::{postgres::PgRow, PgPool, Row};
+
+use super::AppContext;
 
 #[derive(sqlx::FromRow, Hash, Clone, SimpleObject)]
-pub struct AuthorQL {
+pub struct Author {
     pub id: String,
     pub last_name: String,
     #[sqlx(default)]
@@ -22,43 +24,43 @@ pub struct AuthorQL {
     pub pseudonym: Option<String>,
 }
 
-pub struct AuthorLoader(Pool<Postgres>);
+pub(crate) struct AuthorLoader(PgPool);
 
 impl AuthorLoader {
-    fn new(postgres_pool: Pool<Postgres>) -> Self {
+    pub fn new(postgres_pool: PgPool) -> Self {
         Self(postgres_pool)
     }
 }
 
 #[async_trait]
 impl Loader<String> for AuthorLoader {
-    type Value = AuthorQL;
+    type Value = Author;
     type Error = FieldError;
 
     async fn load(&self, keys: &[String]) -> Result<HashMap<String, Self::Value>, Self::Error> {
-        println!("load book by batch {:?}", keys);
+        println!("load authors by batch {:?}", keys);
 
-        let a = sqlx::query_as("SELECT id, name, author FROM books WHERE id = ANY($1)")
+        let author_hash_map = sqlx::query_as("SELECT * FROM authors WHERE id = ANY($1)")
             .bind(keys)
             .fetch(&self.0)
-            .map_ok(|author: AuthorQL| (author.id.clone(), author))
+            .map_ok(|author: Author| (author.id.clone(), author))
             .try_collect()
             .await?;
 
-        Ok(a)
+        Ok(author_hash_map)
     }
 }
 
 #[derive(Default)]
-pub(crate) struct AuthorQuery;
+pub(super) struct AuthorQuery;
 
 #[Object]
 impl AuthorQuery {
-    async fn authors(&self, ctx: &Context<'_>) -> Result<Vec<AuthorQL>, async_graphql::Error> {
-        let pool = ctx.data::<Pool<Postgres>>()?;
+    async fn authors(&self, ctx: &Context<'_>) -> Result<Vec<Author>, async_graphql::Error> {
+        let pool = &ctx.data::<AppContext>()?.pool;
 
-        let query: Vec<AuthorQL> = sqlx::query("SELECT * FROM authors ORDER BY last_name")
-            .map(|row: PgRow| AuthorQL {
+        let query: Vec<Author> = sqlx::query("SELECT * FROM authors ORDER BY last_name")
+            .map(|row: PgRow| Author {
                 id: row.get("id"),
                 last_name: row.get("last_name"),
                 first_name: row.get("first_name"),
@@ -71,5 +73,14 @@ impl AuthorQuery {
             .await?;
 
         Ok(query)
+    }
+
+    async fn author(
+        &self,
+        ctx: &Context<'_>,
+        id: String,
+    ) -> Result<Option<Author>, async_graphql::Error> {
+        let context = &ctx.data_unchecked::<AppContext>().loaders.authors;
+        context.load_one(id).await
     }
 }
