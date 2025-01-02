@@ -4,15 +4,16 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-async-graphql = { version = "6.0.6", features = ["dataloader"] }
+async-graphql = { version = "6.0.6", features = ["dataloader", "uuid"] }
 async-graphql-axum = "6.0.6"
 axum = "0.6.20"
 dotenv = "0.15.0"
 metrics = "0.21.1"
 metrics-exporter-prometheus = "0.12.1"
 serde = { version = "1.0.188", features = ["derive"] }
-sqlx = { version = "0.5", features = ["postgres", "runtime-tokio-native-tls"] }
+sqlx = { version = "0.8.2", features = ["postgres", "runtime-tokio-native-tls", "uuid"] }
 tokio = { version = "1.32.0", features = ["full"] }
+uuid = { version = "1.11.0", features = ["v4", "serde"] }
 
 # retrieved from https://github.com/launchbadge/sqlx/issues/2418
 [build-dependencies]
