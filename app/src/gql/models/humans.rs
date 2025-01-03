@@ -13,15 +13,10 @@ use super::{super::AppContext, countries::Country};
 pub struct Human {
     pub id: String,
     pub last_name: String,
-    #[sqlx(default)]
     pub first_name: Option<String>,
-    #[sqlx(default)]
     pub country1_id: Option<String>,
-    #[sqlx(default)]
     pub country2_id: Option<String>,
-    #[sqlx(default)]
     pub birthyear: Option<i32>,
-    #[sqlx(default)]
     pub pseudonym: Option<String>,
 }
 

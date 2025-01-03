@@ -4,6 +4,7 @@ use async_graphql::{MergedObject, Schema};
 mod context;
 pub mod models;
 
+use models::books::BookQuery;
 use models::countries::CountryQuery;
 use models::humans::HumanQuery;
 use models::languages::LanguageQuery;
@@ -16,6 +17,7 @@ pub(crate) type ServiceSchema = Schema<QueryRoot, EmptyMutation, EmptySubscripti
 
 #[derive(MergedObject, Default)]
 pub(crate) struct QueryRoot(
+    BookQuery,
     CountryQuery,
     LanguageQuery,
     HumanQuery,

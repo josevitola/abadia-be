@@ -7,9 +7,7 @@ pub struct Publisher {
     pub id: String,
     pub name: String,
     pub country1_id: String,
-    #[sqlx(default)]
     pub country2_id: Option<String>,
-    #[sqlx(default)]
     pub parent_id: Option<String>,
 }
 
