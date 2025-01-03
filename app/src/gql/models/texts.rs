@@ -35,7 +35,7 @@ impl TextQuery {
         let pool = &ctx.data::<AppContext>()?.pool;
 
         let texts= 
-            sqlx::query("SELECT t.* FROM texts_authors ta JOIN texts t ON (ta.text_id = t.id) WHERE ta.author_id = $1")
+            sqlx::query("SELECT t.* FROM text_authors ta JOIN texts t ON (ta.text_id = t.id) WHERE ta.author_id = $1")
                 .bind(author_id)
                 .map(|row: PgRow| Text {
                     id: row.get("id"),

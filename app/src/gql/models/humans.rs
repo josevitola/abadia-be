@@ -10,7 +10,7 @@ use super::{super::AppContext, countries::Country};
 
 #[derive(sqlx::FromRow, Hash, Clone, SimpleObject)]
 #[graphql(complex)]
-pub struct Author {
+pub struct Human {
     pub id: String,
     pub last_name: String,
     #[sqlx(default)]
@@ -26,7 +26,7 @@ pub struct Author {
 }
 
 #[ComplexObject]
-impl Author {
+impl Human {
     async fn country1(&self, ctx: &Context<'_>) -> Result<Option<Country>> {
         let country_loader = &ctx.data::<AppContext>()?.loaders.countries;
 
@@ -52,17 +52,17 @@ impl Author {
     }
 }
 
-pub(crate) struct AuthorLoader(PgPool);
+pub(crate) struct HumanLoader(PgPool);
 
-impl AuthorLoader {
+impl HumanLoader {
     pub fn new(postgres_pool: PgPool) -> Self {
         Self(postgres_pool)
     }
 }
 
 #[async_trait]
-impl Loader<String> for AuthorLoader {
-    type Value = Author;
+impl Loader<String> for HumanLoader {
+    type Value = Human;
     type Error = FieldError;
 
     async fn load(&self, keys: &[String]) -> Result<HashMap<String, Self::Value>, Self::Error> {
@@ -71,7 +71,7 @@ impl Loader<String> for AuthorLoader {
         let author_hash_map = sqlx::query_as("SELECT * FROM authors WHERE id = ANY($1)")
             .bind(keys)
             .fetch(&self.0)
-            .map_ok(|author: Author| (author.id.clone(), author))
+            .map_ok(|author: Human| (author.id.clone(), author))
             .try_collect()
             .await?;
 
@@ -80,15 +80,15 @@ impl Loader<String> for AuthorLoader {
 }
 
 #[derive(Default)]
-pub struct AuthorQuery;
+pub struct HumanQuery;
 
 #[Object]
-impl AuthorQuery {
-    async fn authors(&self, ctx: &Context<'_>) -> Result<Vec<Author>, async_graphql::Error> {
+impl HumanQuery {
+    async fn humans(&self, ctx: &Context<'_>) -> Result<Vec<Human>, async_graphql::Error> {
         let pool = &ctx.data::<AppContext>()?.pool;
 
-        let query: Vec<Author> = sqlx::query("SELECT * FROM authors ORDER BY last_name")
-            .map(|row: PgRow| Author {
+        let query: Vec<Human> = sqlx::query("SELECT * FROM humans ORDER BY last_name")
+            .map(|row: PgRow| Human {
                 id: row.get("id"),
                 last_name: row.get("last_name"),
                 first_name: row.get("first_name"),
@@ -103,11 +103,11 @@ impl AuthorQuery {
         Ok(query)
     }
 
-    async fn author(
+    async fn human(
         &self,
         ctx: &Context<'_>,
         id: String,
-    ) -> Result<Option<Author>, async_graphql::Error> {
+    ) -> Result<Option<Human>, async_graphql::Error> {
         let context = &ctx.data_unchecked::<AppContext>().loaders.authors;
         context.load_one(id).await
     }

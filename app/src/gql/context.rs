@@ -1,10 +1,10 @@
 use async_graphql::dataloader::DataLoader;
 use sqlx::PgPool;
 
-use super::models::{authors::AuthorLoader, countries::CountryLoader};
+use super::models::{countries::CountryLoader, humans::HumanLoader};
 
 pub(crate) struct AppDataLoaders {
-    pub authors: DataLoader<AuthorLoader>,
+    pub authors: DataLoader<HumanLoader>,
     pub countries: DataLoader<CountryLoader>,
 }
 
