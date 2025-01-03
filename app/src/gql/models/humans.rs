@@ -50,6 +50,22 @@ impl Human {
             Ok(None)
         }
     }
+
+    async fn name(&self) -> String {
+        if let Some(pseudonym) = &self.pseudonym {
+            pseudonym.to_string()
+        } else {
+            let last_name = &self.last_name;
+            let first_name_opt = &self.first_name;
+
+            if first_name_opt.is_none() {
+                last_name.to_string()
+            } else {
+                let first_name = first_name_opt.as_ref().unwrap();
+                format!("{first_name} {last_name}")
+            }
+        }
+    }
 }
 
 pub(crate) struct HumanLoader(PgPool);
