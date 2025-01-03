@@ -2,12 +2,13 @@ use crate::gql::QueryRoot;
 use crate::observability::metrics::{create_prometheus_recorder, track_metrics};
 use crate::routes::{graphql_handler, graphql_playground, health};
 use async_graphql::dataloader::DataLoader;
-use async_graphql::{EmptyMutation, EmptySubscription, Schema};
+use async_graphql::{EmptySubscription, Schema};
 use axum::{extract::Extension, middleware, routing::get, Router, Server};
 use dotenv::dotenv;
-use gql::models::countries::CountryLoader;
-use gql::models::texts::TextLoader;
-use gql::{models::humans::HumanLoader, AppContext, AppDataLoaders};
+use gql::{
+    models::countries::CountryLoader, models::humans::HumanLoader, models::texts::TextLoader,
+    AppContext, AppDataLoaders, MutationRoot,
+};
 use sqlx::postgres::PgPoolOptions;
 use std::env;
 use std::future::ready;
@@ -31,16 +32,20 @@ async fn main() -> Result<(), sqlx::Error> {
     let countryloader = CountryLoader::new(pool.clone());
     let textloader = TextLoader::new(pool.clone());
 
-    let schema = Schema::build(QueryRoot::default(), EmptyMutation, EmptySubscription)
-        .data(AppContext {
-            pool: pool.clone(),
-            loaders: AppDataLoaders {
-                countries: DataLoader::new(countryloader, tokio::spawn),
-                humans: DataLoader::new(humanloader, tokio::spawn),
-                texts: DataLoader::new(textloader, tokio::spawn),
-            },
-        })
-        .finish();
+    let schema = Schema::build(
+        QueryRoot::default(),
+        MutationRoot::default(),
+        EmptySubscription,
+    )
+    .data(AppContext {
+        pool: pool.clone(),
+        loaders: AppDataLoaders {
+            countries: DataLoader::new(countryloader, tokio::spawn),
+            humans: DataLoader::new(humanloader, tokio::spawn),
+            texts: DataLoader::new(textloader, tokio::spawn),
+        },
+    })
+    .finish();
 
     let prometheus_recorder = create_prometheus_recorder();
 

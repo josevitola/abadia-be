@@ -1,4 +1,4 @@
-use async_graphql::{EmptyMutation, EmptySubscription};
+use async_graphql::EmptySubscription;
 use async_graphql::{MergedObject, Schema};
 
 mod context;
@@ -9,11 +9,11 @@ use models::countries::CountryQuery;
 use models::humans::HumanQuery;
 use models::languages::LanguageQuery;
 use models::publishers::PublisherQuery;
-use models::texts::TextQuery;
+use models::texts::{TextMutation, TextQuery};
 
 pub(crate) use context::{AppContext, AppDataLoaders};
 
-pub(crate) type ServiceSchema = Schema<QueryRoot, EmptyMutation, EmptySubscription>;
+pub(crate) type ServiceSchema = Schema<QueryRoot, MutationRoot, EmptySubscription>;
 
 #[derive(MergedObject, Default)]
 pub(crate) struct QueryRoot(
@@ -24,3 +24,6 @@ pub(crate) struct QueryRoot(
     TextQuery,
     PublisherQuery,
 );
+
+#[derive(MergedObject, Default)]
+pub(crate) struct MutationRoot(TextMutation);

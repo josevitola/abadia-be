@@ -117,3 +117,21 @@ impl TextQuery {
         Ok(texts)
     }
 }
+
+#[derive(Default)]
+pub struct TextMutation;
+
+#[Object]
+impl TextMutation {
+    async fn create_text(&self, ctx: &Context<'_>,title: String) -> Result<u64, async_graphql::Error> {
+        let pool = &ctx.data::<AppContext>()?.pool;
+
+        let res = 
+            sqlx::query("INSERT INTO texts (title) VALUES ($1)")
+                .bind(title)
+                .execute(pool)
+                .await?;
+
+        Ok(res.rows_affected())
+    }
+}
