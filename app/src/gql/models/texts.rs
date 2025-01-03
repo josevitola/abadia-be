@@ -1,12 +1,49 @@
 use crate::gql::AppContext;
-use async_graphql::{Context, Object, SimpleObject};
+use async_graphql::{ComplexObject, Context, Object, SimpleObject};
 use sqlx::{postgres::PgRow, Row};
 
+use super::humans::Human;
+
 #[derive(sqlx::FromRow, Hash, Clone, SimpleObject)]
+#[graphql(complex)]
 pub struct Text {
     pub id: String,
     pub title: String,
 }
+
+#[ComplexObject]
+impl Text {
+    async fn authors(&self, ctx: &Context<'_>) -> Result<Vec<Human>, async_graphql::Error> {
+        let context = ctx.data::<AppContext>()?;
+        let pool = &context.pool;
+
+        struct AuthorId {
+            author_id: String,
+        }
+
+        let text_authors: Vec<AuthorId> = sqlx::query("SELECT author_id FROM text_authors WHERE text_id = $1")
+            .bind(&self.id)
+            .map(|row: PgRow| AuthorId {
+                author_id: row.get("author_id"),
+            })
+            .fetch_all(pool)
+            .await?;
+
+        if text_authors.is_empty() {
+            ()
+        }
+
+        let author_loader = &context.loaders.humans;
+        let author_ids: Vec<String> = text_authors.into_iter().map(|text_author| text_author.author_id).collect();
+
+        let res = author_loader
+            .load_many(author_ids)
+            .await?.values().cloned().collect();
+
+        Ok(res)
+    }
+}
+
 
 #[derive(Default)]
 pub(crate) struct TextQuery;

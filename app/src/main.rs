@@ -26,14 +26,14 @@ async fn main() -> Result<(), sqlx::Error> {
         .connect(&env::var("DATABASE_URL").unwrap().as_str())
         .await?;
 
-    let authorloader = HumanLoader::new(pool.clone());
+    let humanloader = HumanLoader::new(pool.clone());
     let countryloader = CountryLoader::new(pool.clone());
 
     let schema = Schema::build(QueryRoot::default(), EmptyMutation, EmptySubscription)
         .data(AppContext {
             pool: pool.clone(),
             loaders: AppDataLoaders {
-                authors: DataLoader::new(authorloader, tokio::spawn),
+                humans: DataLoader::new(humanloader, tokio::spawn),
                 countries: DataLoader::new(countryloader, tokio::spawn),
             },
         })

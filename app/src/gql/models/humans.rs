@@ -82,16 +82,16 @@ impl Loader<String> for HumanLoader {
     type Error = FieldError;
 
     async fn load(&self, keys: &[String]) -> Result<HashMap<String, Self::Value>, Self::Error> {
-        println!("load authors by batch {:?}", keys);
+        println!("load humans by batch {:?}", keys);
 
-        let author_hash_map = sqlx::query_as("SELECT * FROM authors WHERE id = ANY($1)")
+        let human_hash_map = sqlx::query_as("SELECT * FROM humans WHERE id = ANY($1)")
             .bind(keys)
             .fetch(&self.0)
-            .map_ok(|author: Human| (author.id.clone(), author))
+            .map_ok(|human: Human| (human.id.clone(), human))
             .try_collect()
             .await?;
 
-        Ok(author_hash_map)
+        Ok(human_hash_map)
     }
 }
 
@@ -124,7 +124,7 @@ impl HumanQuery {
         ctx: &Context<'_>,
         id: String,
     ) -> Result<Option<Human>, async_graphql::Error> {
-        let context = &ctx.data_unchecked::<AppContext>().loaders.authors;
+        let context = &ctx.data_unchecked::<AppContext>().loaders.humans;
         context.load_one(id).await
     }
 }

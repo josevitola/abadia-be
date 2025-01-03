@@ -4,7 +4,7 @@ use sqlx::PgPool;
 use super::models::{countries::CountryLoader, humans::HumanLoader};
 
 pub(crate) struct AppDataLoaders {
-    pub authors: DataLoader<HumanLoader>,
+    pub humans: DataLoader<HumanLoader>,
     pub countries: DataLoader<CountryLoader>,
 }
 
