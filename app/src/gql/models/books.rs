@@ -1,10 +1,13 @@
 use crate::gql::AppContext;
-use async_graphql::{Context, Object, SimpleObject};
+use async_graphql::{ComplexObject, Context, Object, SimpleObject};
 use chrono::{DateTime, Utc};
 use sqlx::{postgres::PgRow, Row};
 use uuid::Uuid;
 
+use super::texts::Text;
+
 #[derive(sqlx::FromRow, Hash, Clone, SimpleObject)]
+#[graphql(complex)]
 pub struct Book {
     pub id: Uuid,
     pub title: String,
@@ -16,6 +19,46 @@ pub struct Book {
     pub year: Option<i16>,
     pub printed_in: String,
     pub is_compilation: bool,
+}
+
+#[ComplexObject]
+impl Book {
+    async fn texts(&self, ctx: &Context<'_>) -> Result<Vec<Text>, async_graphql::Error> {
+        let context = ctx.data::<AppContext>()?;
+        let pool = &context.pool;
+
+        struct TextId {
+            text_id: String,
+        }
+
+        let book_texts: Vec<TextId> =
+            sqlx::query("SELECT text_id FROM book_texts WHERE book_id = $1")
+                .bind(&self.id)
+                .map(|row: PgRow| TextId {
+                    text_id: row.get("text_id"),
+                })
+                .fetch_all(pool)
+                .await?;
+
+        if book_texts.is_empty() {
+            ()
+        }
+
+        let text_loader = &context.loaders.texts;
+        let text_ids: Vec<String> = book_texts
+            .into_iter()
+            .map(|book_text| book_text.text_id.to_string())
+            .collect();
+
+        let res = text_loader
+            .load_many(text_ids)
+            .await?
+            .values()
+            .cloned()
+            .collect();
+
+        Ok(res)
+    }
 }
 
 #[derive(Default)]

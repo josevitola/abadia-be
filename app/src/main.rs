@@ -6,6 +6,7 @@ use async_graphql::{EmptyMutation, EmptySubscription, Schema};
 use axum::{extract::Extension, middleware, routing::get, Router, Server};
 use dotenv::dotenv;
 use gql::models::countries::CountryLoader;
+use gql::models::texts::TextLoader;
 use gql::{models::humans::HumanLoader, AppContext, AppDataLoaders};
 use sqlx::postgres::PgPoolOptions;
 use std::env;
@@ -28,13 +29,15 @@ async fn main() -> Result<(), sqlx::Error> {
 
     let humanloader = HumanLoader::new(pool.clone());
     let countryloader = CountryLoader::new(pool.clone());
+    let textloader = TextLoader::new(pool.clone());
 
     let schema = Schema::build(QueryRoot::default(), EmptyMutation, EmptySubscription)
         .data(AppContext {
             pool: pool.clone(),
             loaders: AppDataLoaders {
-                humans: DataLoader::new(humanloader, tokio::spawn),
                 countries: DataLoader::new(countryloader, tokio::spawn),
+                humans: DataLoader::new(humanloader, tokio::spawn),
+                texts: DataLoader::new(textloader, tokio::spawn),
             },
         })
         .finish();

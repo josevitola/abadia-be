@@ -1,5 +1,11 @@
+use std::collections::HashMap;
+
 use crate::gql::AppContext;
-use async_graphql::{ComplexObject, Context, Object, SimpleObject};
+use async_graphql::dataloader::Loader;
+use async_graphql::{ComplexObject, Context, FieldError, Object, SimpleObject};
+use async_graphql::futures_util::TryStreamExt;
+use axum::async_trait;
+use sqlx::PgPool;
 use sqlx::{postgres::PgRow, Row};
 
 use super::humans::Human;
@@ -44,6 +50,33 @@ impl Text {
     }
 }
 
+
+pub(crate) struct TextLoader(PgPool);
+
+impl TextLoader {
+    pub fn new(postgres_pool: PgPool) -> Self {
+        Self(postgres_pool)
+    }
+}
+
+#[async_trait]
+impl Loader<String> for TextLoader {
+    type Value = Text;
+    type Error = FieldError;
+
+    async fn load(&self, keys: &[String]) -> Result<HashMap<String, Self::Value>, Self::Error> {
+        println!("load texts by batch {:?}", keys);
+
+        let hash = sqlx::query_as("SELECT * FROM texts WHERE id = ANY($1)")
+            .bind(keys)
+            .fetch(&self.0)
+            .map_ok(|text: Text| (text.id.clone(), text))
+            .try_collect()
+            .await?;
+
+        Ok(hash)
+    }
+}
 
 #[derive(Default)]
 pub(crate) struct TextQuery;
