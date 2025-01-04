@@ -1,10 +1,12 @@
-use crate::gql::AppContext;
+use std::hash::Hash;
+
+use crate::{gql::AppContext, utils::get_bridge_ids};
 use async_graphql::{ComplexObject, Context, Object, SimpleObject};
 use chrono::{DateTime, Utc};
 use sqlx::{postgres::PgRow, Row};
 use uuid::Uuid;
 
-use super::texts::Text;
+use super::{humans::Human, texts::Text};
 
 #[derive(sqlx::FromRow, Hash, Clone, SimpleObject)]
 #[graphql(complex)]
@@ -27,37 +29,44 @@ impl Book {
         let context = ctx.data::<AppContext>()?;
         let pool = &context.pool;
 
-        struct TextId {
-            text_id: String,
-        }
+        let query = sqlx::query("SELECT text_id AS bridge FROM book_texts WHERE book_id = $1")
+            .bind(&self.id);
 
-        let book_texts: Vec<TextId> =
-            sqlx::query("SELECT text_id FROM book_texts WHERE book_id = $1")
-                .bind(&self.id)
-                .map(|row: PgRow| TextId {
-                    text_id: row.get("text_id"),
-                })
-                .fetch_all(pool)
-                .await?;
-
-        if book_texts.is_empty() {
+        let text_ids: Vec<String> = get_bridge_ids(query, pool).await?;
+        if text_ids.is_empty() {
             ()
         }
 
         let text_loader = &context.loaders.texts;
-        let text_ids: Vec<String> = book_texts
-            .into_iter()
-            .map(|book_text| book_text.text_id.to_string())
-            .collect();
 
-        let res = text_loader
+        Ok(text_loader
             .load_many(text_ids)
             .await?
             .values()
             .cloned()
-            .collect();
+            .collect())
+    }
 
-        Ok(res)
+    async fn editors(&self, ctx: &Context<'_>) -> Result<Vec<Human>, async_graphql::Error> {
+        let context = ctx.data::<AppContext>()?;
+        let pool = &context.pool;
+
+        let query = sqlx::query("SELECT editor_id AS bridge FROM book_editors WHERE book_id = $1")
+            .bind(&self.id);
+
+        let editor_ids: Vec<String> = get_bridge_ids(query, pool).await?;
+        if editor_ids.is_empty() {
+            ()
+        }
+
+        let human_loader = &context.loaders.humans;
+
+        Ok(human_loader
+            .load_many(editor_ids)
+            .await?
+            .values()
+            .cloned()
+            .collect())
     }
 }
 

@@ -16,6 +16,7 @@ use std::future::ready;
 mod gql;
 mod observability;
 mod routes;
+mod utils;
 
 // Built following https://oliverjumpertz.com/blog/how-to-build-a-powerful-graphql-api-with-rust/
 
