@@ -2,64 +2,17 @@ use std::collections::HashMap;
 
 use crate::gql::AppContext;
 use async_graphql::dataloader::Loader;
-use async_graphql::{ComplexObject, Context, FieldError, Object, SimpleObject};
+use async_graphql::{Context, FieldError, Object, SimpleObject};
 use async_graphql::futures_util::TryStreamExt;
 use axum::async_trait;
-use sqlx::{PgConnection, PgPool};
+use sqlx::PgPool;
 use sqlx::{postgres::PgRow, Row};
 
-use super::humans::Human;
-use super::languages::{Language, LanguageUtil};
+mod text;
+mod textdb;
 
-#[derive(sqlx::FromRow, Hash, Clone, SimpleObject)]
-#[graphql(complex)]
-pub struct Text {
-    pub id: String,
-    pub title: String,
-    pub orig_language_id: String,
-}
-
-#[ComplexObject]
-impl Text {
-    async fn authors(&self, ctx: &Context<'_>) -> Result<Vec<Human>, async_graphql::Error> {
-        let context = ctx.data::<AppContext>()?;
-        let pool = &context.pool;
-
-        struct AuthorId {
-            author_id: String,
-        }
-
-        let text_authors: Vec<AuthorId> = sqlx::query("SELECT author_id FROM text_authors WHERE text_id = $1")
-            .bind(&self.id)
-            .map(|row: PgRow| AuthorId {
-                author_id: row.get("author_id"),
-            })
-            .fetch_all(pool)
-            .await?;
-
-        if text_authors.is_empty() {
-            ()
-        }
-
-        let author_loader = &context.loaders.humans;
-        let author_ids: Vec<String> = text_authors.into_iter().map(|text_author| text_author.author_id).collect();
-
-        let res = author_loader
-            .load_many(author_ids)
-            .await?.values().cloned().collect();
-
-        Ok(res)
-    }
-
-    async fn original_language(&self, ctx: &Context<'_>) -> Result<Language, async_graphql::Error> {
-        let pool = &ctx.data::<AppContext>()?.pool;
-        let query = sqlx::query("SELECT * FROM languages WHERE iso693 = $1")
-            .bind(&self.orig_language_id);
-
-        Ok(LanguageUtil::fetch_one(&pool, query).await?)
-    }
-}
-
+pub use text::Text;
+pub use textdb::TextDB;
 
 pub(crate) struct TextLoader(PgPool);
 
@@ -134,22 +87,6 @@ impl TextQuery {
 struct CreateTextWithAuthorsResponse {
     text_id: String,
     rows_affected: u64,
-}
-
-struct TextDB;
-
-impl TextDB {
-    async fn create_text(tx: &mut PgConnection, title: String) -> String {
-        let res: Result<String, sqlx::Error> = sqlx::query_scalar("INSERT INTO texts (title) VALUES ($1) RETURNING ID")
-                .bind(title)
-                .fetch_one(tx)
-                .await;
-
-        match res {
-            Ok(id) => id,
-            Err(_) => String::from("")
-        }
-    }
 }
 
 #[derive(Default)]
