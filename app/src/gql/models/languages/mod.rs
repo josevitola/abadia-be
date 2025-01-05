@@ -1,11 +1,11 @@
 use crate::gql::AppContext;
 use async_graphql::{Context, Object};
 
+mod db;
 mod language;
-mod languagedb;
 
+pub use db::LanguageDB;
 pub use language::Language;
-pub use languagedb::LanguageDB;
 
 #[derive(Default)]
 pub struct LanguageQuery;

@@ -1,16 +1,6 @@
-use async_graphql::{Context, InputObject, Object};
+use async_graphql::{Context, Object};
 
-use super::AppContext;
-
-#[derive(InputObject)]
-struct CreateHumanInput {
-    last_name: String,
-    first_name: Option<String>,
-    country1_id: Option<String>,
-    country2_id: Option<String>,
-    birthyear: Option<i32>,
-    pseudonym: Option<String>
-}
+use super::{db::CreateHumanInput, AppContext, HumanDB};
 
 #[derive(Default)]
 pub struct HumanMutation; // glorious evolution!
@@ -20,30 +10,13 @@ impl HumanMutation {
     async fn create_human(
         &self,
         ctx: &Context<'_>,
-        input: CreateHumanInput
+        input: CreateHumanInput,
     ) -> Result<u64, async_graphql::Error> {
-            let pool = &ctx.data::<AppContext>()?.pool;
+        let pool = &ctx.data::<AppContext>()?.pool;
 
-            let CreateHumanInput {
-                birthyear,
-                country1_id,
-                country2_id,
-                first_name,
-                last_name,
-                pseudonym
-            } = input;
+        let mut tx = pool.begin().await?;
+        let conn = &mut *tx;
 
-            let res = 
-                sqlx::query("INSERT INTO humans (last_name, first_name, country1_id, country2_id, birthyear, pseudonym) VALUES ($1, $2, $3, $4, $5, $6)")
-                    .bind(last_name)
-                    .bind(first_name)
-                    .bind(country1_id)
-                    .bind(country2_id)
-                    .bind(birthyear)
-                    .bind(pseudonym)
-                    .execute(pool)
-                    .await?;
-
-            Ok(res.rows_affected())
-        }
+        Ok(HumanDB::insert_one(conn, input).await?)
+    }
 }
