@@ -5,8 +5,8 @@ mod context;
 pub mod models;
 
 use models::books::BookQuery;
-use models::countries::CountryQuery;
-use models::humans::HumanQuery;
+use models::countries::{CountryMutation, CountryQuery};
+use models::humans::{HumanMutation, HumanQuery};
 use models::languages::LanguageQuery;
 use models::publishers::PublisherQuery;
 use models::texts::{TextMutation, TextQuery};
@@ -26,4 +26,4 @@ pub(crate) struct QueryRoot(
 );
 
 #[derive(MergedObject, Default)]
-pub(crate) struct MutationRoot(TextMutation);
+pub(crate) struct MutationRoot(CountryMutation, TextMutation, HumanMutation);
