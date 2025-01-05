@@ -4,7 +4,7 @@ use async_graphql::{MergedObject, Schema};
 mod context;
 pub mod models;
 
-use models::books::BookQuery;
+use models::books::{BookMutation, BookQuery};
 use models::countries::{CountryMutation, CountryQuery};
 use models::humans::{HumanMutation, HumanQuery};
 use models::languages::LanguageQuery;
@@ -26,4 +26,4 @@ pub(crate) struct QueryRoot(
 );
 
 #[derive(MergedObject, Default)]
-pub(crate) struct MutationRoot(CountryMutation, TextMutation, HumanMutation);
+pub(crate) struct MutationRoot(BookMutation, CountryMutation, TextMutation, HumanMutation);
