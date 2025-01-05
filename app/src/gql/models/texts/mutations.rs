@@ -66,6 +66,8 @@ impl TextMutation {
             })
         }
 
+        tx.commit().await?;
+
         Ok(CreateTextWithAuthorsResponse {
             rows_affected: text_authors_insert_res.rows_affected(),
             text_id: new_text_id
