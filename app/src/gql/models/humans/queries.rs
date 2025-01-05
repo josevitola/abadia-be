@@ -36,26 +36,34 @@ impl HumanQuery {
         context.load_one(id).await
     }
 
-    // async fn humans_by_name(
-    //     &self,
-    //     ctx: &Context<'_>,
-    //     keyword: String,
-    // ) -> Result<Vec<Human>, async_graphql::Error> {
-    //     let pool = &ctx.data::<AppContext>()?.pool;
+    async fn humans_by_name(
+        &self,
+        ctx: &Context<'_>,
+        keyword: String,
+    ) -> Result<Vec<Human>, async_graphql::Error> {
+        let pool = &ctx.data::<AppContext>()?.pool;
+        let keyword = format!("%{keyword}%");
 
-    //     let query: Vec<Human> = sqlx::query("SELECT * FROM humans WHERE  ORDER BY last_name")
-    //         .map(|row: PgRow| Human {
-    //             id: row.get("id"),
-    //             last_name: row.get("last_name"),
-    //             first_name: row.get("first_name"),
-    //             country1_id: row.get("country1_id"),
-    //             country2_id: row.get("country2_id"),
-    //             birthyear: row.get("birthyear"),
-    //             pseudonym: row.get("pseudonym"),
-    //         })
-    //         .fetch_all(pool)
-    //         .await?;
+        let query: Vec<Human> = sqlx::query(
+            "
+            SELECT * FROM public.humans
+            WHERE last_name ILIKE $1 OR first_name ILIKE $1 OR pseudonym ILIKE $1
+            ORDER BY id ASC 
+        ",
+        )
+        .bind(keyword)
+        .map(|row: PgRow| Human {
+            id: row.get("id"),
+            last_name: row.get("last_name"),
+            first_name: row.get("first_name"),
+            country1_id: row.get("country1_id"),
+            country2_id: row.get("country2_id"),
+            birthyear: row.get("birthyear"),
+            pseudonym: row.get("pseudonym"),
+        })
+        .fetch_all(pool)
+        .await?;
 
-    //     Ok(query)
-    // }
+        Ok(query)
+    }
 }
