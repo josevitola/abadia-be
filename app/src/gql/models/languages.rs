@@ -8,24 +8,39 @@ use sqlx::{
 use crate::gql::AppContext;
 
 #[derive(SimpleObject)]
-struct Language {
-    pub iso693_3: String,
+pub struct Language {
+    pub iso693: String,
     pub name: String,
 }
 
-struct LanguageUtil;
+pub struct LanguageUtil;
 
 impl LanguageUtil {
-    async fn fetch(
+    pub async fn fetch(
         pool: &PgPool,
         query: Query<'_, Postgres, PgArguments>,
     ) -> Result<Vec<Language>, sqlx::Error> {
         let res = query
             .map(|row: PgRow| Language {
-                iso693_3: row.get("iso693_3"),
+                iso693: row.get("iso693"),
                 name: row.get("name"),
             })
             .fetch_all(pool)
+            .await?;
+
+        Ok(res)
+    }
+
+    pub async fn fetch_one(
+        pool: &PgPool,
+        query: Query<'_, Postgres, PgArguments>,
+    ) -> Result<Language, sqlx::Error> {
+        let res = query
+            .map(|row: PgRow| Language {
+                iso693: row.get("iso693"),
+                name: row.get("name"),
+            })
+            .fetch_one(pool)
             .await?;
 
         Ok(res)
@@ -39,7 +54,7 @@ pub struct LanguageQuery;
 impl LanguageQuery {
     async fn languages(&self, ctx: &Context<'_>) -> Result<Vec<Language>, async_graphql::Error> {
         let pool = &ctx.data::<AppContext>()?.pool;
-        let query = sqlx::query("SELECT * FROM languages ORDER BY iso693_3");
+        let query = sqlx::query("SELECT * FROM languages ORDER BY iso693");
 
         Ok(LanguageUtil::fetch(pool, query).await?)
     }
@@ -50,7 +65,7 @@ impl LanguageQuery {
         keyword: String,
     ) -> Result<Vec<Language>, async_graphql::Error> {
         let pool = &ctx.data::<AppContext>()?.pool;
-        let query = sqlx::query("SELECT * FROM languages WHERE name ILIKE $1 ORDER BY iso693_3")
+        let query = sqlx::query("SELECT * FROM languages WHERE name ILIKE $1 ORDER BY iso693")
             .bind(format!("%{keyword}%"));
 
         Ok(LanguageUtil::fetch(pool, query).await?)

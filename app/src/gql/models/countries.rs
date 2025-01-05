@@ -8,7 +8,7 @@ use sqlx::{postgres::PgRow, PgPool, Row};
 
 #[derive(sqlx::FromRow, Hash, Clone, SimpleObject)]
 pub struct Country {
-    pub iso3166: String,
+    pub iso3166_2: String,
     pub name: String,
 }
 
@@ -28,10 +28,10 @@ impl Loader<String> for CountryLoader {
     async fn load(&self, keys: &[String]) -> Result<HashMap<String, Self::Value>, Self::Error> {
         println!("load countries by batch {:?}", keys);
 
-        let hash = sqlx::query_as("SELECT * FROM countries WHERE iso3166 = ANY($1)")
+        let hash = sqlx::query_as("SELECT * FROM countries WHERE iso3166_2 = ANY($1)")
             .bind(keys)
             .fetch(&self.0)
-            .map_ok(|country: Country| (country.iso3166.clone(), country))
+            .map_ok(|country: Country| (country.iso3166_2.clone(), country))
             .try_collect()
             .await?;
 
@@ -47,9 +47,9 @@ impl CountryQuery {
     async fn countries(&self, ctx: &Context<'_>) -> Result<Vec<Country>, async_graphql::Error> {
         let pool = &ctx.data::<AppContext>()?.pool;
 
-        let query: Vec<Country> = sqlx::query("SELECT * FROM countries ORDER BY iso3166")
+        let query: Vec<Country> = sqlx::query("SELECT * FROM countries ORDER BY iso3166_2")
             .map(|row: PgRow| Country {
-                iso3166: row.get("iso3166"),
+                iso3166_2: row.get("iso3166_2"),
                 name: row.get("name"),
             })
             .fetch_all(pool)
@@ -61,10 +61,10 @@ impl CountryQuery {
     async fn country(
         &self,
         ctx: &Context<'_>,
-        iso3166: String,
+        iso3166_2: String,
     ) -> Result<Option<Country>, async_graphql::Error> {
         let context = &ctx.data_unchecked::<AppContext>().loaders.countries;
-        context.load_one(iso3166).await
+        context.load_one(iso3166_2).await
     }
 }
 
@@ -76,13 +76,13 @@ impl CountryMutation {
     async fn create_country(
         &self,
         ctx: &Context<'_>,
-        iso3166: String,
+        iso3166_2: String,
         name: String,
     ) -> Result<u64, async_graphql::Error> {
         let pool = &ctx.data::<AppContext>()?.pool;
 
-        let res = sqlx::query("INSERT INTO countries (iso3166, name) VALUES ($1, $2)")
-            .bind(iso3166)
+        let res = sqlx::query("INSERT INTO countries (iso3166_2, name) VALUES ($1, $2)")
+            .bind(iso3166_2)
             .bind(name)
             .execute(pool)
             .await?;

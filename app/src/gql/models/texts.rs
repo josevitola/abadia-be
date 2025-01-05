@@ -2,19 +2,21 @@ use std::collections::HashMap;
 
 use crate::gql::AppContext;
 use async_graphql::dataloader::Loader;
-use async_graphql::{ComplexObject, Context,     FieldError, Object, SimpleObject};
+use async_graphql::{ComplexObject, Context, FieldError, Object, SimpleObject};
 use async_graphql::futures_util::TryStreamExt;
 use axum::async_trait;
 use sqlx::{PgConnection, PgPool};
 use sqlx::{postgres::PgRow, Row};
 
 use super::humans::Human;
+use super::languages::{Language, LanguageUtil};
 
 #[derive(sqlx::FromRow, Hash, Clone, SimpleObject)]
 #[graphql(complex)]
 pub struct Text {
     pub id: String,
     pub title: String,
+    pub orig_language_id: String,
 }
 
 #[ComplexObject]
@@ -47,6 +49,14 @@ impl Text {
             .await?.values().cloned().collect();
 
         Ok(res)
+    }
+
+    async fn original_language(&self, ctx: &Context<'_>) -> Result<Language, async_graphql::Error> {
+        let pool = &ctx.data::<AppContext>()?.pool;
+        let query = sqlx::query("SELECT * FROM languages WHERE iso693 = $1")
+            .bind(&self.orig_language_id);
+
+        Ok(LanguageUtil::fetch_one(&pool, query).await?)
     }
 }
 
@@ -90,6 +100,7 @@ impl TextQuery {
             .map(|row: PgRow| Text {
                 id: row.get("id"),
                 title: row.get("title"),
+                orig_language_id: row.get("orig_language_id"),
             })
             .fetch_all(pool)
             .await?;
@@ -110,6 +121,7 @@ impl TextQuery {
                 .map(|row: PgRow| Text {
                     id: row.get("id"),
                     title: row.get("title"),
+                    orig_language_id: row.get("orig_language_id"),
                 })
                 .fetch_all(pool)
                 .await?;
