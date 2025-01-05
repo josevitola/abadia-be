@@ -1,18 +1,26 @@
+use super::Text;
+use crate::utils::db::*;
 use sqlx::{
     postgres::{PgArguments, PgRow},
     query::Query,
     PgConnection, PgPool, Postgres, Row,
 };
 
-use crate::utils::db::*;
-
-use super::Text;
-
 pub struct CreateTextInput {
     pub title: String,
 }
 
 pub struct TextDB;
+
+impl TextDB {
+    pub fn to_struct(row: PgRow) -> Text {
+        Text {
+            id: row.get("id"),
+            title: row.get("title"),
+            orig_language_id: row.get("orig_language_id"),
+        }
+    }
+}
 
 impl DBInsertOne<CreateTextInput> for TextDB {
     async fn insert_one(tx: &mut PgConnection, input: CreateTextInput) -> String {
@@ -51,15 +59,6 @@ impl DBReadMany<Text> for TextDB {
         pool: &PgPool,
         query: Query<'_, Postgres, PgArguments>,
     ) -> Result<Vec<Text>, sqlx::Error> {
-        let res = query
-            .map(|row: PgRow| Text {
-                id: row.get("id"),
-                title: row.get("title"),
-                orig_language_id: row.get("orig_language_id"),
-            })
-            .fetch_all(pool)
-            .await?;
-
-        Ok(res)
+        Ok(query.map(TextDB::to_struct).fetch_all(pool).await?)
     }
 }

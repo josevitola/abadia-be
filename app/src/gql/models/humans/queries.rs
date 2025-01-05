@@ -1,7 +1,5 @@
+use super::{AppContext, Human, HumanDB};
 use async_graphql::{Context, Object};
-use sqlx::{postgres::PgRow, Row};
-
-use super::{AppContext, Human};
 
 #[derive(Default)]
 pub struct HumanQuery;
@@ -12,15 +10,7 @@ impl HumanQuery {
         let pool = &ctx.data::<AppContext>()?.pool;
 
         let query: Vec<Human> = sqlx::query("SELECT * FROM humans ORDER BY last_name")
-            .map(|row: PgRow| Human {
-                id: row.get("id"),
-                last_name: row.get("last_name"),
-                first_name: row.get("first_name"),
-                country1_id: row.get("country1_id"),
-                country2_id: row.get("country2_id"),
-                birthyear: row.get("birthyear"),
-                pseudonym: row.get("pseudonym"),
-            })
+            .map(HumanDB::to_struct)
             .fetch_all(pool)
             .await?;
 
@@ -52,15 +42,7 @@ impl HumanQuery {
         ",
         )
         .bind(keyword)
-        .map(|row: PgRow| Human {
-            id: row.get("id"),
-            last_name: row.get("last_name"),
-            first_name: row.get("first_name"),
-            country1_id: row.get("country1_id"),
-            country2_id: row.get("country2_id"),
-            birthyear: row.get("birthyear"),
-            pseudonym: row.get("pseudonym"),
-        })
+        .map(HumanDB::to_struct)
         .fetch_all(pool)
         .await?;
 

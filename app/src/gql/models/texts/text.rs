@@ -1,10 +1,8 @@
-use async_graphql::{ComplexObject, Context, SimpleObject};
-use sqlx::{postgres::PgRow, Row};
-
+use super::super::languages::{Language, LanguageDB};
 use crate::gql::context::AppContext;
 use crate::gql::models::humans::Human;
-
-use super::super::languages::{Language, LanguageDB};
+use async_graphql::{ComplexObject, Context, SimpleObject};
+use sqlx::{postgres::PgRow, Row};
 
 #[derive(sqlx::FromRow, Hash, Clone, SimpleObject)]
 #[graphql(complex)]

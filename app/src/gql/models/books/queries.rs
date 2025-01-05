@@ -1,8 +1,7 @@
+use super::book::Book;
 use crate::gql::AppContext;
 use async_graphql::{Context, Object};
 use sqlx::{postgres::PgRow, Row};
-
-use super::book::Book;
 
 #[derive(Default)]
 pub struct BookQuery;
