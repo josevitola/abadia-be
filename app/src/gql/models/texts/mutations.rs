@@ -93,6 +93,8 @@ impl TextMutation {
                 .execute(conn)
                 .await?;
 
+        tx.commit().await?;
+
         Ok(text_authors_insert_res.rows_affected())
     }
 }
