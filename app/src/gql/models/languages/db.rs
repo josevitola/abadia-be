@@ -9,7 +9,7 @@ use super::Language;
 pub struct LanguageDB;
 
 impl LanguageDB {
-    pub async fn fetch<'a>(
+    pub async fn fetch(
         pool: &PgPool,
         query: Query<'_, Postgres, PgArguments>,
     ) -> Result<Vec<Language>, sqlx::Error> {

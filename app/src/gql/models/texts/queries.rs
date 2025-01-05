@@ -1,9 +1,9 @@
 use async_graphql::{Context, Object};
 use sqlx::{postgres::PgRow, Row};
 
-use crate::gql::AppContext;
+use crate::{gql::AppContext, utils::db::*};
 
-use super::Text;
+use super::{db::TextDB, Text};
 
 #[derive(Default)]
 pub struct TextQuery;
@@ -12,17 +12,9 @@ pub struct TextQuery;
 impl TextQuery {
     async fn texts(&self, ctx: &Context<'_>) -> Result<Vec<Text>, async_graphql::Error> {
         let pool = &ctx.data::<AppContext>()?.pool;
+        let query = sqlx::query("SELECT * FROM texts ORDER BY id");
 
-        let texts: Vec<Text> = sqlx::query("SELECT * FROM texts ORDER BY id")
-            .map(|row: PgRow| Text {
-                id: row.get("id"),
-                title: row.get("title"),
-                orig_language_id: row.get("orig_language_id"),
-            })
-            .fetch_all(pool)
-            .await?;
-
-        Ok(texts)
+        Ok(TextDB::fetch_many(pool, query).await?)
     }
 
     async fn texts_by_author(
@@ -44,5 +36,15 @@ impl TextQuery {
                 .await?;
 
         Ok(texts)
+    }
+
+    async fn texts_by_title(&self, ctx: &Context<'_>, keyword: String) -> Result<Vec<Text>, async_graphql::Error> {
+        let pool = &ctx.data::<AppContext>()?.pool;
+        let keyword = format!("%{keyword}%");
+        let query =
+            sqlx::query("SELECT * FROM texts WHERE title ILIKE $1")
+            .bind(keyword);
+
+        Ok(TextDB::fetch_many(pool, query).await?)
     }
 }

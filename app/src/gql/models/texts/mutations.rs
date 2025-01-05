@@ -1,7 +1,7 @@
 use async_graphql::{Context, Object, SimpleObject};
 
-use crate::gql::AppContext;
-use super::db::TextDB;
+use crate::{gql::AppContext, utils::db::*};
+use super::db::{CreateTextInput, TextDB};
 
 #[derive(Default, SimpleObject)]
 struct CreateTextWithAuthorsResponse {
@@ -18,7 +18,7 @@ impl TextMutation {
         let pool = &ctx.data::<AppContext>()?.pool;
 
         let mut tx = pool.begin().await?;
-        let res = TextDB::create_text(&mut *tx, title).await;
+        let res = TextDB::insert_one(&mut *tx, CreateTextInput { title }).await;
         tx.commit().await?;
 
         Ok(res)
@@ -27,14 +27,15 @@ impl TextMutation {
     async fn create_text_with_authors(
         &self, 
         ctx: &Context<'_>, 
-        title: String, author_ids: Vec<String>
+        title: String,
+        author_ids: Vec<String>
     ) -> Result<CreateTextWithAuthorsResponse, async_graphql::Error> {
         let pool = &ctx.data::<AppContext>()?.pool;
 
         let mut tx = pool.begin().await?;
         let conn = &mut *tx;
 
-        let new_text_id = TextDB::create_text(conn, title).await;
+        let new_text_id = TextDB::insert_one(conn, CreateTextInput { title }).await;
 
         if new_text_id.is_empty() {
             return Err(async_graphql::Error {
@@ -69,5 +70,29 @@ impl TextMutation {
             rows_affected: text_authors_insert_res.rows_affected(),
             text_id: new_text_id
         })
+    }
+
+    async fn add_author_to_texts(
+        &self, 
+        ctx: &Context<'_>, 
+        author_id: String,
+        text_ids: Vec<String>
+    ) -> Result<u64, async_graphql::Error> {
+        let pool = &ctx.data::<AppContext>()?.pool;
+
+        let mut tx = pool.begin().await?;
+        let conn = &mut *tx;
+
+        let author_id_col: Vec<String> = vec![author_id.clone(); text_ids.len()];
+
+        // following https://github.com/launchbadge/sqlx/blob/main/FAQ.md#how-can-i-bind-an-array-to-a-values-clause-how-can-i-do-bulk-inserts
+        let text_authors_insert_res = 
+            sqlx::query("INSERT INTO text_authors (text_id, author_id) SELECT * FROM UNNEST($1::text[], $2::text[])")
+                .bind(&text_ids)
+                .bind(author_id_col)
+                .execute(conn)
+                .await?;
+
+        Ok(text_authors_insert_res.rows_affected())
     }
 }

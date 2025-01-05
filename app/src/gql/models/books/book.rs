@@ -3,7 +3,7 @@ use crate::{
         models::{humans::Human, texts::Text},
         AppContext,
     },
-    utils::get_bridge_ids,
+    utils::db::get_bridge_ids,
 };
 use async_graphql::{ComplexObject, Context, SimpleObject};
 use chrono::{DateTime, Utc};
