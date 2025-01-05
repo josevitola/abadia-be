@@ -1,15 +1,10 @@
 use crate::gql::AppContext;
-use async_graphql::{Context, Object, SimpleObject};
+use async_graphql::{Context, Object};
 use sqlx::{postgres::PgRow, Row};
 
-#[derive(sqlx::FromRow, Hash, Clone, SimpleObject)]
-pub struct Publisher {
-    pub id: String,
-    pub name: String,
-    pub country1_id: String,
-    pub country2_id: Option<String>,
-    pub parent_id: Option<String>,
-}
+mod publisher;
+
+pub use publisher::Publisher;
 
 #[derive(Default)]
 pub(crate) struct PublisherQuery;

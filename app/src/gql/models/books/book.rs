@@ -1,12 +1,13 @@
-use std::hash::Hash;
-
-use crate::{gql::AppContext, utils::get_bridge_ids};
-use async_graphql::{ComplexObject, Context, Object, SimpleObject};
+use crate::{
+    gql::{
+        models::{humans::Human, texts::Text},
+        AppContext,
+    },
+    utils::get_bridge_ids,
+};
+use async_graphql::{ComplexObject, Context, SimpleObject};
 use chrono::{DateTime, Utc};
-use sqlx::{postgres::PgRow, Row};
 use uuid::Uuid;
-
-use super::{humans::Human, texts::Text};
 
 #[derive(sqlx::FromRow, Hash, Clone, SimpleObject)]
 #[graphql(complex)]
@@ -67,33 +68,5 @@ impl Book {
             .values()
             .cloned()
             .collect())
-    }
-}
-
-#[derive(Default)]
-pub(crate) struct BookQuery;
-
-#[Object]
-impl BookQuery {
-    async fn books(&self, ctx: &Context<'_>) -> Result<Vec<Book>, async_graphql::Error> {
-        let pool = &ctx.data::<AppContext>()?.pool;
-
-        let query: Vec<Book> = sqlx::query("SELECT * FROM books ORDER BY title")
-            .map(|row: PgRow| Book {
-                id: row.get("id"),
-                title: row.get("title"),
-                publisher_id: row.get("publisher_id"),
-                npages: row.get("npages"),
-                dcr: row.get("dcr"),
-                isbn10: row.get("isbn10"),
-                isbn13: row.get("isbn13"),
-                year: row.get("year"),
-                printed_in: row.get("printed_in"),
-                is_compilation: row.get("is_compilation"),
-            })
-            .fetch_all(pool)
-            .await?;
-
-        Ok(query)
     }
 }

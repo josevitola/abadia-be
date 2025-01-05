@@ -2,15 +2,13 @@ use std::collections::HashMap;
 
 use crate::gql::AppContext;
 use async_graphql::futures_util::TryStreamExt;
-use async_graphql::{dataloader::Loader, Context, FieldError, Object, SimpleObject};
+use async_graphql::{dataloader::Loader, Context, FieldError, Object};
 use axum::async_trait;
 use sqlx::{postgres::PgRow, PgPool, Row};
 
-#[derive(sqlx::FromRow, Hash, Clone, SimpleObject)]
-pub struct Country {
-    pub iso3166_2: String,
-    pub name: String,
-}
+mod country;
+
+pub use country::Country;
 
 pub(crate) struct CountryLoader(PgPool);
 
