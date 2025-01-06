@@ -1,4 +1,5 @@
 use async_graphql::{ComplexObject, Context, SimpleObject};
+use chrono::{DateTime, Utc};
 
 use crate::gql::models::countries::Country;
 
@@ -14,6 +15,7 @@ pub struct Human {
     pub country2_id: Option<String>,
     pub birthyear: Option<i32>,
     pub pseudonym: Option<String>,
+    pub dcr: DateTime<Utc>,
 }
 
 #[ComplexObject]

@@ -57,6 +57,7 @@ impl HumanDB {
             country2_id: row.get("country2_id"),
             birthyear: row.get("birthyear"),
             pseudonym: row.get("pseudonym"),
+            dcr: row.get("dcr"),
         }
     }
 }

@@ -53,6 +53,7 @@ impl DBManager<Text, CreateTextInput> for TextDB {
             id: row.get("id"),
             title: row.get("title"),
             orig_language_id: row.get("orig_language_id"),
+            dcr: row.get("dcr"),
         }
     }
 }

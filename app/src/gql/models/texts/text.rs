@@ -2,6 +2,7 @@ use super::super::languages::{Language, LanguageDB};
 use crate::gql::context::AppContext;
 use crate::gql::models::humans::Human;
 use async_graphql::{ComplexObject, Context, SimpleObject};
+use chrono::{DateTime, Utc};
 use sqlx::{postgres::PgRow, Row};
 
 #[derive(sqlx::FromRow, Hash, Clone, SimpleObject)]
@@ -10,6 +11,7 @@ pub struct Text {
     pub id: String,
     pub title: String,
     pub orig_language_id: String,
+    pub dcr: DateTime<Utc>,
 }
 
 #[ComplexObject]
