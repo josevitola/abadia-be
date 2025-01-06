@@ -28,7 +28,7 @@ impl DBManager<BiographyEntry, BiographyEntryForm> for BiographyEntryDB {
             appears_in_id,
         } = input;
 
-        let res: Result<i64, sqlx::Error> = sqlx::query_scalar(
+        let res: Result<i32, sqlx::Error> = sqlx::query_scalar(
             "INSERT INTO bioentries (human_id, entry, appears_in_id) VALUES ($1, $2, $3) RETURNING ID",
         )
         .bind(human_id)
