@@ -1,3 +1,4 @@
+pub mod bioentries;
 pub mod books;
 pub mod countries;
 pub mod humans;

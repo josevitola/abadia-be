@@ -14,7 +14,7 @@ pub struct CreateTextInput {
 pub struct TextDB;
 
 impl DBManager<Text, CreateTextInput> for TextDB {
-    async fn insert_one(tx: &mut PgConnection, input: CreateTextInput) -> String {
+    async fn insert_one(tx: &mut PgConnection, input: CreateTextInput) -> Result<String, DBError> {
         let CreateTextInput {
             title,
             orig_language_id,
@@ -29,8 +29,11 @@ impl DBManager<Text, CreateTextInput> for TextDB {
         .await;
 
         match res {
-            Ok(id) => id,
-            Err(_) => String::from(""),
+            Ok(id) => Ok(id.to_string()),
+            Err(err) => {
+                println!("{:?}", err);
+                Err(DBError::Insert(err.to_string()))
+            }
         }
     }
 

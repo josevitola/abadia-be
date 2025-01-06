@@ -18,10 +18,10 @@ impl TextMutation {
         let pool = &ctx.data::<AppContext>()?.pool;
 
         let mut tx = pool.begin().await?;
-        let res = TextDB::insert_one(&mut *tx, CreateTextInput { title, orig_language_id }).await;
+        let new_id_res = TextDB::insert_one(&mut *tx, CreateTextInput { title, orig_language_id }).await?;
         tx.commit().await?;
 
-        Ok(res)
+        Ok(new_id_res)
     }
 
     async fn create_text_with_authors(
@@ -36,15 +36,7 @@ impl TextMutation {
         let mut tx = pool.begin().await?;
         let conn = &mut *tx;
 
-        let new_text_id = TextDB::insert_one(conn, CreateTextInput { title, orig_language_id }).await;
-
-        if new_text_id.is_empty() {
-            return Err(async_graphql::Error {
-                message: "Text could not be created".to_string(),
-                source: None,
-                extensions: None
-            });
-        }
+        let new_text_id = TextDB::insert_one(conn, CreateTextInput { title, orig_language_id }).await?;
 
         let text_id_col: Vec<String> = vec![new_text_id.clone(); author_ids.len()];
 
