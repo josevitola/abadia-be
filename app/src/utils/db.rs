@@ -26,22 +26,18 @@ pub(crate) async fn get_bridge_ids(
     Ok(res.into_iter().map(|bridge| bridge.bridge).collect())
 }
 
-// pub trait DBReadOne<T> {
-//     async fn fetch_one(
-//         pool: &PgPool,
-//         query: Query<'_, Postgres, PgArguments>,
-//     ) -> Result<T, sqlx::Error>;
-// }
+pub trait DBManager<T, C> {
+    async fn insert_one(tx: &mut PgConnection, input: C) -> String;
 
-pub trait DBReadMany<T> {
     async fn fetch_many(
         pool: &PgPool,
         query: Query<'_, Postgres, PgArguments>,
     ) -> Result<Vec<T>, sqlx::Error>;
-}
 
-pub trait DBInsertOne<T> {
-    async fn insert_one(tx: &mut PgConnection, input: T) -> String;
-}
+    async fn fetch_one(
+        pool: &PgPool,
+        query: Query<'_, Postgres, PgArguments>,
+    ) -> Result<T, sqlx::Error>;
 
-// pub trait DBManager<T>: DBReadMany<T> + DBReadOne<T> + DBInsertOne<T> {}
+    fn to_struct(row: PgRow) -> T;
+}

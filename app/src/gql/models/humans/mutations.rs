@@ -17,6 +17,10 @@ impl HumanMutation {
         let mut tx = pool.begin().await?;
         let conn = &mut *tx;
 
-        Ok(HumanDB::insert_one(conn, input).await?)
+        let rows_affected = HumanDB::insert_one(conn, input).await?;
+
+        tx.commit().await?;
+
+        Ok(rows_affected)
     }
 }

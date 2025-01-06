@@ -14,11 +14,11 @@ pub struct TextMutation;
 
 #[Object]
 impl TextMutation {
-    async fn create_text(&self, ctx: &Context<'_>, title: String) -> Result<String, async_graphql::Error> {
+    async fn create_text(&self, ctx: &Context<'_>, title: String, orig_language_id: String) -> Result<String, async_graphql::Error> {
         let pool = &ctx.data::<AppContext>()?.pool;
 
         let mut tx = pool.begin().await?;
-        let res = TextDB::insert_one(&mut *tx, CreateTextInput { title }).await;
+        let res = TextDB::insert_one(&mut *tx, CreateTextInput { title, orig_language_id }).await;
         tx.commit().await?;
 
         Ok(res)
@@ -28,6 +28,7 @@ impl TextMutation {
         &self, 
         ctx: &Context<'_>, 
         title: String,
+        orig_language_id: String,
         author_ids: Vec<String>
     ) -> Result<CreateTextWithAuthorsResponse, async_graphql::Error> {
         let pool = &ctx.data::<AppContext>()?.pool;
@@ -35,7 +36,7 @@ impl TextMutation {
         let mut tx = pool.begin().await?;
         let conn = &mut *tx;
 
-        let new_text_id = TextDB::insert_one(conn, CreateTextInput { title }).await;
+        let new_text_id = TextDB::insert_one(conn, CreateTextInput { title, orig_language_id }).await;
 
         if new_text_id.is_empty() {
             return Err(async_graphql::Error {

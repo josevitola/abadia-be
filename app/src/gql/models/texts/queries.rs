@@ -17,6 +17,13 @@ impl TextQuery {
         Ok(TextDB::fetch_many(pool, query).await?)
     }
 
+    async fn text_by_id(&self, ctx: &Context<'_>, id: String) -> Result<Text, async_graphql::Error> {
+        let pool = &ctx.data::<AppContext>()?.pool;
+        let query = sqlx::query("SELECT * FROM texts WHERE id = $1").bind(id);
+
+        Ok(TextDB::fetch_one(pool, query).await?)
+    }
+
     async fn texts_by_author(
         &self,
         ctx: &Context<'_>,
