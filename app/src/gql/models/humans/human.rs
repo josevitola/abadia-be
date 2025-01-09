@@ -14,6 +14,7 @@ pub struct Human {
     pub country1_id: Option<String>,
     pub country2_id: Option<String>,
     pub birthyear: Option<i32>,
+    pub deathyear: Option<i32>,
     pub pseudonym: Option<String>,
     pub dcr: DateTime<Utc>,
 }

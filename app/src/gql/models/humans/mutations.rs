@@ -11,16 +11,16 @@ impl HumanMutation {
         &self,
         ctx: &Context<'_>,
         input: CreateHumanInput,
-    ) -> Result<u64, async_graphql::Error> {
+    ) -> Result<String, async_graphql::Error> {
         let pool = &ctx.data::<AppContext>()?.pool;
 
         let mut tx = pool.begin().await?;
         let conn = &mut *tx;
 
-        let rows_affected = HumanDB::insert_one(conn, input).await?;
+        let id = HumanDB::insert_one(conn, input).await?;
 
         tx.commit().await?;
 
-        Ok(rows_affected)
+        Ok(id)
     }
 }
