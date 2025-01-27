@@ -1,8 +1,9 @@
+use crate::utils::db::DBManager;
 use crate::{
     gql::{
         models::{
             humans::{Human, HumanDB},
-            texts::Text,
+            texts::{Text, TextDB},
         },
         AppContext,
     },
@@ -33,22 +34,16 @@ impl Book {
         let context = ctx.data::<AppContext>()?;
         let pool = &context.pool;
 
-        let query = sqlx::query("SELECT text_id AS bridge FROM book_texts WHERE book_id = $1")
-            .bind(&self.id);
+        let query = sqlx::query(
+            "
+            SELECT t.*, bt.orderidx FROM book_texts bt RIGHT JOIN texts t ON (t.id = bt.text_id)
+            WHERE bt.book_id = $1
+            ORDER BY orderidx
+            ",
+        )
+        .bind(&self.id);
 
-        let text_ids: Vec<String> = get_bridge_ids(query, pool).await?;
-        if text_ids.is_empty() {
-            ()
-        }
-
-        let text_loader = &context.loaders.texts;
-
-        Ok(text_loader
-            .load_many(text_ids)
-            .await?
-            .values()
-            .cloned()
-            .collect())
+        Ok(TextDB::fetch_many(pool, query).await?)
     }
 
     async fn editors(&self, ctx: &Context<'_>) -> Result<Vec<Human>, async_graphql::Error> {

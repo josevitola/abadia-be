@@ -32,7 +32,7 @@ impl BookQuery {
         Ok(query)
     }
 
-    async fn book_by_id(&self, ctx: &Context<'_>, id: Uuid) -> Result<Book, async_graphql::Error> {
+    async fn book(&self, ctx: &Context<'_>, id: Uuid) -> Result<Book, async_graphql::Error> {
         let pool = &ctx.data::<AppContext>()?.pool;
         let query = sqlx::query("SELECT * FROM books WHERE id = $1").bind(id);
 
