@@ -1,6 +1,7 @@
 use super::{db::TextDB, Text};
 use crate::{gql::AppContext, utils::db::*};
 use async_graphql::{Context, Object};
+use uuid::Uuid;
 
 #[derive(Default)]
 pub struct TextQuery;
@@ -34,6 +35,19 @@ impl TextQuery {
         let query =
             sqlx::query("SELECT t.* FROM text_authors ta JOIN texts t ON (ta.text_id = t.id) WHERE ta.author_id = $1")
             .bind(author_id);
+
+        Ok(TextDB::fetch_many(pool, query).await?)
+    }
+
+    async fn texts_by_book(
+        &self,
+        ctx: &Context<'_>,
+        book_id: Uuid,
+    ) -> Result<Vec<Text>, async_graphql::Error> {
+        let pool = &ctx.data::<AppContext>()?.pool;
+        let query =
+            sqlx::query("SELECT t.* FROM book_texts bt JOIN texts t ON (bt.text_id = t.id) WHERE bt.book_id = $1")
+            .bind(book_id);
 
         Ok(TextDB::fetch_many(pool, query).await?)
     }
