@@ -1,7 +1,10 @@
 use async_graphql::{ComplexObject, Context, SimpleObject};
 use chrono::{DateTime, Utc};
 
-use crate::gql::models::countries::Country;
+use crate::{
+    gql::models::{countries::Country, texts::Text},
+    utils::db::get_bridge_ids,
+};
 
 use super::AppContext;
 
@@ -59,5 +62,27 @@ impl Human {
                 format!("{first_name} {last_name}")
             }
         }
+    }
+
+    async fn texts(&self, ctx: &Context<'_>) -> Result<Vec<Text>, async_graphql::Error> {
+        let context = ctx.data::<AppContext>()?;
+        let pool = &context.pool;
+
+        let query = sqlx::query("SELECT text_id AS bridge FROM text_authors WHERE author_id = $1")
+            .bind(&self.id);
+
+        let text_ids: Vec<String> = get_bridge_ids(query, pool).await?;
+        if text_ids.is_empty() {
+            ()
+        }
+
+        let text_loader = &context.loaders.texts;
+
+        Ok(text_loader
+            .load_many(text_ids)
+            .await?
+            .values()
+            .cloned()
+            .collect())
     }
 }
