@@ -1,9 +1,11 @@
 use super::super::languages::{Language, LanguageDB};
 use crate::gql::context::AppContext;
+use crate::gql::models::books::Book;
 use crate::gql::models::humans::Human;
 use async_graphql::{ComplexObject, Context, SimpleObject};
 use chrono::{DateTime, Utc};
 use sqlx::{postgres::PgRow, Row};
+use uuid::Uuid;
 
 #[derive(sqlx::FromRow, Hash, Clone, SimpleObject)]
 #[graphql(complex)]
@@ -12,6 +14,10 @@ pub struct Text {
     pub title: String,
     pub orig_language_id: String,
     pub dcr: DateTime<Utc>,
+}
+
+struct UuidBridge {
+    bridge: Uuid,
 }
 
 #[ComplexObject]
@@ -51,6 +57,37 @@ impl Text {
             .collect();
 
         Ok(res)
+    }
+
+    async fn books(&self, ctx: &Context<'_>) -> Result<Vec<Book>, async_graphql::Error> {
+        let context = ctx.data::<AppContext>()?;
+        let pool = &context.pool;
+
+        let query = sqlx::query("SELECT book_id AS bridge FROM book_texts WHERE text_id = $1")
+            .bind(&self.id);
+
+        let book_ids: Vec<Uuid> = query
+            .map(|row: PgRow| UuidBridge {
+                bridge: row.get("bridge"),
+            })
+            .fetch_all(pool)
+            .await?
+            .iter()
+            .map(|row| row.bridge)
+            .collect();
+
+        if book_ids.is_empty() {
+            ()
+        }
+
+        let book_loader = &context.loaders.books;
+
+        Ok(book_loader
+            .load_many(book_ids)
+            .await?
+            .values()
+            .cloned()
+            .collect())
     }
 
     async fn original_language(&self, ctx: &Context<'_>) -> Result<Language, async_graphql::Error> {

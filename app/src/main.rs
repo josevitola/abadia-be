@@ -5,6 +5,7 @@ use async_graphql::dataloader::DataLoader;
 use async_graphql::{EmptySubscription, Schema};
 use axum::{extract::Extension, middleware, routing::get, Router, Server};
 use dotenv::dotenv;
+use gql::models::books::BookLoader;
 use gql::models::texts::TextLoader;
 use gql::{
     models::countries::CountryLoader, models::humans::HumanLoader, AppContext, AppDataLoaders,
@@ -33,6 +34,7 @@ async fn main() -> Result<(), sqlx::Error> {
     let humanloader = HumanLoader::new(pool.clone());
     let countryloader = CountryLoader::new(pool.clone());
     let textloader = TextLoader::new(pool.clone());
+    let bookloader = BookLoader::new(pool.clone());
 
     let schema = Schema::build(
         QueryRoot::default(),
@@ -45,6 +47,7 @@ async fn main() -> Result<(), sqlx::Error> {
             countries: DataLoader::new(countryloader, tokio::spawn),
             humans: DataLoader::new(humanloader, tokio::spawn),
             texts: DataLoader::new(textloader, tokio::spawn),
+            books: DataLoader::new(bookloader, tokio::spawn),
         },
     })
     .finish();
