@@ -1,7 +1,9 @@
-use super::book::Book;
+use super::{book::Book, db::BookDB};
 use crate::gql::AppContext;
+use crate::utils::db::DBManager;
 use async_graphql::{Context, Object};
 use sqlx::{postgres::PgRow, Row};
+use uuid::Uuid;
 
 #[derive(Default)]
 pub struct BookQuery;
@@ -28,5 +30,12 @@ impl BookQuery {
             .await?;
 
         Ok(query)
+    }
+
+    async fn book_by_id(&self, ctx: &Context<'_>, id: Uuid) -> Result<Book, async_graphql::Error> {
+        let pool = &ctx.data::<AppContext>()?.pool;
+        let query = sqlx::query("SELECT * FROM books WHERE id = $1").bind(id);
+
+        Ok(BookDB::fetch_one(pool, query).await?)
     }
 }

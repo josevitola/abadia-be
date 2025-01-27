@@ -1,4 +1,5 @@
 mod book;
+mod db;
 mod mutations;
 mod queries;
 
